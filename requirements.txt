@@ -20,14 +20,7 @@ openai==1.3.7
 # Telegram bot integration
 python-telegram-bot==20.7
 
-# Excel export functionality
-openpyxl==3.1.2
-pandas==2.1.4
-
-# PDF generation
-reportlab==4.0.7
-
-# Testing
+# Testing (only for development)
 pytest==7.4.3
 pytest-asyncio==0.21.1
 pytest-cov==4.1.0
