@@ -26,6 +26,7 @@ services:
         value: /tmp/exports
     healthCheckPath: /health
     autoDeploy: true
+    pythonVersion: 3.11.18
 
   - type: cron
     name: daily-summary-cron
@@ -46,4 +47,5 @@ services:
       - key: TELEGRAM_CHAT_ID
         sync: false
       - key: LOG_LEVEL
-        value: INFO 
+        value: INFO
+    pythonVersion: 3.11.18 
