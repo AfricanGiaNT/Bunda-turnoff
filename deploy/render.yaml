@@ -1,0 +1,49 @@
+services:
+  - type: web
+    name: service-station-ops-bot
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api.telegram_handler:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: TELEGRAM_TOKEN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: AIRTABLE_API_KEY
+        sync: false
+      - key: AIRTABLE_BASE_ID
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: DAILY_SUMMARY_TIME_UTC
+        value: 15:00
+      - key: STARTING_PETTY_CASH
+        value: 100000
+      - key: LOG_LEVEL
+        value: INFO
+      - key: EXPORT_DIR
+        value: /tmp/exports
+    healthCheckPath: /health
+    autoDeploy: true
+
+  - type: cron
+    name: daily-summary-cron
+    env: python
+    plan: free
+    schedule: "0 15 * * *"  # Daily at 15:00 UTC (17:00 Blantyre time)
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -c "import asyncio; from api.summary_generator import generator; asyncio.run(generator.send_summary_to_configured_chat())"
+    envVars:
+      - key: TELEGRAM_TOKEN
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: AIRTABLE_API_KEY
+        sync: false
+      - key: AIRTABLE_BASE_ID
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: LOG_LEVEL
+        value: INFO 

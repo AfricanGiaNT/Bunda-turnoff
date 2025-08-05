@@ -1,0 +1,33 @@
+{
+  "starting_petty_cash": 100000,
+  "vehicles": [
+    "Toyota Hilux",
+    "Toyota Prado",
+    "Nissan Patrol"
+  ],
+  "task_categories": [
+    "Maintenance",
+    "Cleaning",
+    "Inventory",
+    "Administrative",
+    "Customer Service"
+  ],
+  "issue_categories": [
+    "Equipment",
+    "Supply",
+    "Complaint",
+    "Safety",
+    "Technical"
+  ],
+  "fuel_types": [
+    "Diesel",
+    "Petrol",
+    "Unleaded"
+  ],
+  "default_settings": {
+    "daily_summary_time": "17:00",
+    "timezone": "Africa/Blantyre",
+    "currency": "MWK",
+    "language": "en"
+  }
+} 

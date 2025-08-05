@@ -1,0 +1,227 @@
+---
+alwaysApply: false
+---
+## 3. Folder Structure
+
+/ (root)
+├── /api/                      # Backend service (Cursor project logic)
+│   ├── telegram_handler.py    # Telegram webhook/polling entrypoints
+│   ├── gpt_parser.py          # GPT prompt construction + response interpretation
+│   ├── airtable_client.py     # Airtable read/write abstractions
+│   ├── summary_generator.py   # Daily summary logic
+│   ├── exporter.py            # Excel/PDF export logic
+│   └── utils/                 # Shared helpers (datetime conversion, retries, logging)
+├── /plans/                   # Execution plans and their lifecycle
+│   ├── /unimplemented/       # Plans defined but not yet fully coded/tested
+│   │   └── *.md             # Individual plan markdowns (e.g., petty_cash_reconciliation.md)
+│   ├── /implemented/         # Plans confirmed complete
+│   │   └── *.md
+│   └── plan_manager.py       # Script/service that detects completion and moves plan files
+├── /tests/                   # Automated and manual test definitions
+│   ├── /unit/               # Unit tests for individual modules (parser, airtable client, etc.)
+│   ├── /integration/        # End-to-end tests (Telegram → GPT → Airtable → Summary)
+│   └── test_runner.py        # Entrypoint to run all relevant tests
+├── /config/                  # Environment-agnostic configuration templates / examples
+│   ├── example.env          # Template for environment variables
+│   └── airtable_seed.json    # Optional initial data (vehicles, task templates, starting petty cash)
+├── /scripts/                 # Ad-hoc scripts (e.g., one-off migrations, re-syncs)
+│   └── reconcile_petty_cash.py
+├── /docs/                    # Human-facing documentation, usage guides
+│   └── usage.md             # “How to use the bot” quick reference
+├── /deploy/                  # Deployment helpers (Render service definitions, cron config)
+│   └── render.yaml          # Example Render service + cron job manifest
+├── .env                      # Local development override (gitignored)
+├── README.md                 # Project overview + quickstart
+└── requirements.txt          # Python dependencies (or package.json if using Node)
+
+---
+
+## 4. Plan Lifecycle & Automation
+
+### Plan Files
+- Each plan lives as a standalone markdown file describing:
+  - Title
+  - Objective
+  - Success criteria (MVP pass/fail)
+  - Steps / subtasks
+  - Dependencies
+  - Completion checklist (with ✅ marks)
+  - Date created / last updated
+
+Example filename: `plans/unimplemented/daily_summary_pipeline.md`
+
+### Automatic Promotion
+- `plan_manager.py` watches or is invoked after key operations (e.g., test success, manual flag) to determine if a plan’s success criteria are fully met.
+- Detection method (suggested):
+  - Parse the plan’s “Completion checklist.” If all items are marked done (e.g., using `- [x]` for markdown), the script:
+    1. Moves the file from `plans/unimplemented/` to `plans/implemented/`.
+    2. Appends a timestamped “Completed on” entry.
+    3. Optionally commits or tags in version control (if used).
+- The bot (or your automation layer) can expose a `/plan-status` command to list unimplemented vs implemented plans.
+
+---
+
+## 5. Configuration & Secrets
+
+- All secrets and environment-specific values live in environment variables:
+  - `TELEGRAM_TOKEN`
+  - `OPENAI_API_KEY`
+  - `AIRTABLE_API_KEY`
+  - `AIRTABLE_BASE_ID`
+  - `DAILY_SUMMARY_TIME_UTC`
+  - `STARTING_PETTY_CASH` (or seeded through Airtable config record)
+- Provide `config/example.env` as a template. Do **not** commit real credentials.
+- Airtable seed data (vehicles list, initial task categories) can be provided via `config/airtable_seed.json` or a one-time setup script.
+
+---
+
+## 6. GPT Parsing Contracts
+
+- Input: raw Telegram text plus any attachment metadata.
+- Output: strict JSON with:
+  - `type`: one of `expense`, `fuel`, `task`, `issue`
+  - Required fields per type (see plan doc for schema)
+- If any required field is missing / ambiguous:
+  - Bot replies with a clarification prompt.
+  - Example: “I couldn’t tell the amount—was that 15,000 MWK for pump repair from petty cash? Reply Y to confirm or restate.”
+- Include a confidence heuristic (e.g., missing key fields or conflicting values triggers fallback).
+- All responses (raw GPT output, sanitized JSON) are logged for audit.
+
+---
+
+## 7. Airtable Integration Standards
+
+- Encapsulate all Airtable calls behind `airtable_client.py` with:
+  - Retry/backoff on transient failures
+  - Schema validation before sending (e.g., ensure numeric fields are numeric)
+  - Idempotent upserts where applicable (to avoid duplicates from retries)
+- Maintain a configuration record/table for:
+  - Current theoretical petty cash balance (chained from previous days)
+  - Vehicle registry (makes it easy to add new vehicles later)
+
+---
+
+## 8. Telegram Command & UX Conventions
+
+Supported commands (MVP):
+- Free-text natural language logs (expense, fuel, task, issue)
+- `/status` — snapshot of petty cash vs actual, pending tasks, open issues
+- `/export` — trigger full Excel + summary export
+- `/help` — usage examples and phrasing guidance
+- `/plan-status` — list which plans are pending vs done
+
+Confirmation messages follow a consistent template:
+- Type of entry logged
+- Key extracted values
+- Any divergence (e.g., theoretical vs actual petty cash mismatch)
+- Instruction to correct (e.g., “To edit: /edit expense <record_id> description=…”)
+
+---
+
+## 9. Testing Rules
+
+### Unit Tests
+- Cover:
+  - GPT parsing logic with diverse example messages
+  - Airtable client behavior (mocked)
+  - Summary generation logic (input synthetic data, verify format)
+
+### Integration Tests
+- Simulate full flow: send a mock Telegram message, run parser, write to Airtable (can be a test base), generate summary, ensure output structure matches expectations.
+- Export generation test: produce Excel and verify sheets + key aggregates.
+
+### Test Automation
+- `tests/test_runner.py` aggregates and runs all tests; exit code reflects pass/fail.
+- Tests should be runnable locally and ideally as a pre-deploy sanity check.
+
+---
+
+## 10. Export & Backup Policy
+
+- Export format: Excel workbook (one sheet per core table) + summary sheet.
+- Triggerable via `/export` command or scheduled at end of campaign.
+- Export files are stored temporarily (e.g., in working directory or a temp folder) and a download link is returned in Telegram.
+- Optional: Generate a PDF summary (can be second-phase if time-constrained).
+
+---
+
+## 11. Deployment
+
+- Service lives on Render.
+  - One web service for the API.
+  - Scheduled job hitting `/daily-summary` at configured UTC time.
+- Use `deploy/render.yaml` as template for service + cron.
+- Health check endpoint (`/health`) to confirm uptime.
+
+---
+
+## 12. Logging & Observability
+
+- Log incoming Telegram payloads, GPT raw outputs, Airtable responses, summary sends, and exports.
+- Errors get tagged with context (e.g., “Failed to write fuel log: airtable rate limit”; retry logic invoked).
+- Optionally expose a minimal status endpoint showing:
+  - Last summary sent timestamp
+  - Petty cash last reconciliation
+  - Plan file counts (implemented vs unimplemented)
+
+---
+
+## 13. Editing / Recovery
+
+- Provide an `/edit` syntax:
+  - Example: `/edit expense rec_ABC123 amount=20000 description="Updated filter repair"`
+- Logs of edits kept to allow auditing.
+- If GPT mis-parses, allow quick re-entry by replying to bot’s confirmation with corrected phrasing or using explicit edit.
+
+---
+
+## 14. Versioning & Change Tracking
+
+- Keep human-readable changelog in `README.md` or `docs/usage.md` for quick reference (what changed, when, who).
+- Plan promotion (unimplemented → implemented) acts as a lightweight progress version tag.
+
+---
+
+## 15. Security & Access
+
+- For MVP: single-user (you) assumption; do not expose sensitive endpoints publicly without token gating.
+- Future: plan for authentication layer before handing off to staff (e.g., Telegram user whitelisting).
+
+---
+
+## 16. Immediate Operational Checklist (to live in `/plans/unimplemented/initial_mvp_setup.md`)
+
+- [ ] Create Airtable base & tables per schema.  
+- [ ] Seed starting petty cash.  
+- [ ] Provision Telegram bot and get token.  
+- [ ] Scaffold backend: env loader, Airtable client, Telegram webhook.  
+- [ ] Implement GPT parsing for expenses.  
+- [ ] Confirm end-to-end logging for an expense entry.  
+- [ ] Extend parser to fuel, task, issue.  
+- [ ] Build daily summary generator.  
+- [ ] Deploy to Render; schedule summary job.  
+- [ ] Implement `/export` and test Excel generation.  
+- [ ] Write usage guide in `docs/usage.md`.  
+- [ ] Mark plan complete so `plan_manager.py` can move it.
+
+---
+
+## 17. Maintenance & Next-Phase Ideas (for future plans)
+
+- Multi-user support / role-based logging  
+- Auto-reminders for overdue tasks  
+- Alerting thresholds (low petty cash, high-severity issues)  
+- Fuel efficiency dashboards  
+- Staff-facing interface (web or expanded Telegram flows)  
+- Historical trend reporting  
+
+---
+
+# End of Rules Document
+
+Summary of changes / why this fits your current project:
+	•	Tailored to service station operations (petty cash, fuel, tasks, issues).
+	•	Explicit plans folder with implemented/unimplemented lifecycle and automation via plan_manager.py.
+	•	Test structure added (unit + integration).
+	•	GPT parsing contracts, edit/recovery, export policy, and deployment specifics (Render) included.
+	•	Clear MVP-specific checklist to get you live in 3 days.
