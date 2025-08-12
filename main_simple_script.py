@@ -48,6 +48,15 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             }
             self.wfile.write(json.dumps(response).encode())
             
+        elif path == "/telegram-webhook":
+            # Also handle GET requests to the webhook endpoint for testing
+            logger.info("GET request to /telegram-webhook - This is for testing only")
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            response = {"status": "ok", "message": "Webhook endpoint is active"}
+            self.wfile.write(json.dumps(response).encode())
+            
         else:
             self.send_response(404)
             self.send_header('Content-type', 'application/json')
