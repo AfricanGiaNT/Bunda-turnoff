@@ -119,12 +119,12 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         """Log all requests."""
         logger.info(f"{self.address_string()} - {format % args}")
 
-def run_server(port=8000):
+def run_server(host='0.0.0.0', port=8000):
     """Run the HTTP server."""
-    server_address = ('', port)
+    server_address = (host, port)
     httpd = ThreadedHTTPServer(server_address, SimpleHTTPRequestHandler)
-    logger.info(f"Starting server on port {port}")
-    logger.info(f"Server running at http://localhost:{port}")
+    logger.info(f"Starting server on {host}:{port}")
+    logger.info(f"Server running at http://{host}:{port}")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
