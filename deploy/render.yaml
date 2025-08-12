@@ -3,8 +3,18 @@ services:
     name: service-station-ops-bot
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn api.telegram_handler:app --host 0.0.0.0 --port $PORT
+    buildCommand: |
+      python --version
+      pip --version
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      pip list
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    # Alternative start commands if the above fails:
+    # startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    # startCommand: uvicorn wsgi:app --host 0.0.0.0 --port $PORT
+    # startCommand: python -m uvicorn main:app --host 0.0.0.0 --port $PORT
+    # startCommand: python -c "import uvicorn; from main import app; uvicorn.run(app, host='0.0.0.0', port=int('$PORT'))"
     envVars:
       - key: TELEGRAM_TOKEN
         sync: false
@@ -26,14 +36,19 @@ services:
         value: /tmp/exports
     healthCheckPath: /health
     autoDeploy: true
-    pythonVersion: 3.11.18
+    pythonVersion: 3.11.0
 
   - type: cron
     name: daily-summary-cron
     env: python
     plan: free
     schedule: "0 15 * * *"  # Daily at 15:00 UTC (17:00 Blantyre time)
-    buildCommand: pip install -r requirements.txt
+    buildCommand: |
+      python --version
+      pip --version
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      pip list
     startCommand: python -c "import asyncio; from api.summary_generator import generator; asyncio.run(generator.send_summary_to_configured_chat())"
     envVars:
       - key: TELEGRAM_TOKEN
@@ -48,4 +63,4 @@ services:
         sync: false
       - key: LOG_LEVEL
         value: INFO
-    pythonVersion: 3.11.18 
+    pythonVersion: 3.11.0 
