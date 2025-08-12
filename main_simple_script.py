@@ -61,10 +61,31 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         path = parsed_path.path
         
         if path == "/telegram-webhook":
-            # Simple webhook handler
+            # Process Telegram webhook
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
             
+            try:
+                # Log the received data
+                logger.info(f"Received webhook data: {post_data.decode('utf-8')}")
+                
+                # Parse JSON data
+                update = json.loads(post_data.decode('utf-8'))
+                
+                # Extract message if available
+                message = update.get('message', {})
+                chat_id = message.get('chat', {}).get('id')
+                text = message.get('text', '')
+                
+                if chat_id and text:
+                    logger.info(f"Received message from {chat_id}: {text}")
+                    # Here you would process the message
+                    # For now, just log it
+                
+            except Exception as e:
+                logger.error(f"Error processing webhook: {e}")
+            
+            # Always respond with 200 OK to Telegram
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
