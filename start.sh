@@ -28,4 +28,4 @@ echo "Using Python: $($PYTHON_CMD --version)"
 
 # Run the application
 echo "Starting application..."
-exec $PYTHON_CMD main_simple_script.py
+exec $PYTHON_CMD app.py
