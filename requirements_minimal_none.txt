@@ -1,0 +1,2 @@
+# No external dependencies - using only Python standard library
+# This file can be empty or contain only comments
