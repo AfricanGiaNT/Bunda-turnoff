@@ -134,4 +134,6 @@ def run_server(host='0.0.0.0', port=8000):
 if __name__ == "__main__":
     # Get port from environment variable or use default
     port = int(os.environ.get('PORT', 8000))
+    logger.info(f"Environment PORT: {os.environ.get('PORT', 'Not set')}")
+    logger.info(f"Using port: {port}")
     run_server(host='0.0.0.0', port=port)

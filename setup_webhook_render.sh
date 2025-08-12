@@ -4,7 +4,7 @@
 # Check if the URL was provided
 if [ -z "$1" ]; then
   echo "Usage: $0 <render_url>"
-  echo "Example: $0 https://service-station-ops-bot.onrender.com"
+  echo "Example: $0 https://bunda-turnoff-d28sinjuibrs73dtvp7g.onrender.com"
   exit 1
 fi
 
