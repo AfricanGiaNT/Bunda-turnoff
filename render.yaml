@@ -9,21 +9,11 @@ services:
       pip install --upgrade pip
       pip install -r requirements.txt
       pip list
-    # Alternative build command if the above fails:
-    # buildCommand: |
-    #   python --version
-    #   pip --version
-    #   pip install --upgrade pip
-    #   pip install -r requirements_minimal.txt
-    #   pip list
-    startCommand: python -m uvicorn main:app --host 0.0.0.0 --port $PORT
-    # Alternative start commands if the above fails:
-    # startCommand: uvicorn app_standalone:app --host 0.0.0.0 --port $PORT
-    # startCommand: uvicorn main_simple:app --host 0.0.0.0 --port $PORT
-    # startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
-    # startCommand: uvicorn wsgi:app --host 0.0.0.0 --port $PORT
-    # startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
-    # startCommand: python -c "import uvicorn; from main import app; uvicorn.run(app, host='0.0.0.0', port=int('$PORT'))"
+    # Web Service start command - uses Background Worker app but with PORT support
+    startCommand: python app_web_service.py
+    # Alternative start commands:
+    # startCommand: python app_background_worker.py
+    # startCommand: python -m uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: TELEGRAM_TOKEN
         sync: false
@@ -43,8 +33,6 @@ services:
         value: INFO
       - key: EXPORT_DIR
         value: /tmp/exports
-      - key: PORT
-        value: 10000
     healthCheckPath: /health
     autoDeploy: true
     pythonVersion: 3.13.0

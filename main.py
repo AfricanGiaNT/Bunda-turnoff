@@ -244,4 +244,17 @@ async def send_message(chat_id: int, text: str) -> bool:
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    
+    # Get port from environment variable with validation
+    port_str = os.environ.get('PORT', '8000')
+    try:
+        port = int(port_str)
+    except ValueError:
+        port = 8000
+        logger.warning(f"Invalid PORT value '{port_str}', using default port 8000")
+    
+    logger.info(f"Environment PORT: {os.environ.get('PORT', 'Not set')}")
+    logger.info(f"Using port: {port}")
+    logger.info(f"Starting FastAPI server on 0.0.0.0:{port}")
+    
+    uvicorn.run(app, host="0.0.0.0", port=port)
