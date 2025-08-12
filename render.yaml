@@ -9,8 +9,17 @@ services:
       pip install --upgrade pip
       pip install -r requirements.txt
       pip list
+    # Alternative build command if the above fails:
+    # buildCommand: |
+    #   python --version
+    #   pip --version
+    #   pip install --upgrade pip
+    #   pip install -r requirements_minimal.txt
+    #   pip list
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     # Alternative start commands if the above fails:
+    # startCommand: uvicorn app_standalone:app --host 0.0.0.0 --port $PORT
+    # startCommand: uvicorn main_simple:app --host 0.0.0.0 --port $PORT
     # startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
     # startCommand: uvicorn wsgi:app --host 0.0.0.0 --port $PORT
     # startCommand: python -m uvicorn main:app --host 0.0.0.0 --port $PORT
