@@ -45,7 +45,7 @@ services:
         value: /tmp/exports
     healthCheckPath: /health
     autoDeploy: true
-    pythonVersion: 3.11.0
+    pythonVersion: 3.13.0
 
   - type: cron
     name: daily-summary-cron
@@ -72,4 +72,4 @@ services:
         sync: false
       - key: LOG_LEVEL
         value: INFO
-    pythonVersion: 3.11.0 
+    pythonVersion: 3.13.0 
